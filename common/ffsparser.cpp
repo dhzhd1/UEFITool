@@ -3428,6 +3428,15 @@ USTATUS FfsParser::checkProtectedRanges(const UModelIndex & index)
     if (bgProtectedRangeFound) {
         UByteArray digest(SHA256_DIGEST_SIZE, '\x00');
         sha256(protectedParts.constData(), protectedParts.size(), digest.data());
+	securityInfo += UString("\nBG-Protect Hash Calculated: ");
+	for (UINT8 i = 0; i < (UINT8)digest.size(); i++) {
+	    securityInfo += usprintf("%02X", (UINT8)digest.at(i));
+	}
+	
+	securityInfo += UString("\nBG-Protect Hash Existing: ");
+	for (UINT8 i = 0; i < (UINT8)bgBpDigest.size(); i++) {
+	    securityInfo += usprintf("%02X", (UINT8)bgBpDigest.at(i));
+	}
 
         if (digest != bgBpDigest) {
             msg(usprintf("%s: BG-protected ranges hash mismatch, opened image may refuse to boot", __FUNCTION__), index);
@@ -3456,7 +3465,6 @@ USTATUS FfsParser::checkProtectedRanges(const UModelIndex & index)
 
                     UByteArray digest(SHA256_DIGEST_SIZE, '\x00');
                     sha256(protectedParts.constData(), protectedParts.size(), digest.data());
-
                     if (digest != bgProtectedRanges[i].Hash) {
                         msg(usprintf("%s: old AMI protected range [%Xh:%Xh] hash mismatch, opened image may refuse to boot", __FUNCTION__,
                             bgProtectedRanges[i].Offset, bgProtectedRanges[i].Offset + bgProtectedRanges[i].Size),
@@ -3506,7 +3514,10 @@ USTATUS FfsParser::checkProtectedRanges(const UModelIndex & index)
 
                 UByteArray digest(SHA256_DIGEST_SIZE, '\x00');
                 sha256(protectedParts.constData(), protectedParts.size(), digest.data());
-
+		securityInfo += UString("\nAMI Hash Calculated: ");
+		for (UINT8 i = 0; i < (UINT8)digest.size(); i++) {
+		    securityInfo += usprintf("%02X", (UINT8)digest.at(i));
+		}
                 if (digest != bgProtectedRanges[i].Hash) {
                     msg(usprintf("%s: AMI protected range [%Xh:%Xh] hash mismatch, opened image may refuse to boot", __FUNCTION__,
                         bgProtectedRanges[i].Offset, bgProtectedRanges[i].Offset + bgProtectedRanges[i].Size),
@@ -3682,7 +3693,7 @@ USTATUS FfsParser::parseVendorHashFile(const UByteArray & fileGuid, const UModel
                     securityInfo += usprintf("New AMI hash file found at base %Xh\nProtected ranges:", model->base(fileIndex));
                     for (UINT32 i = 0; i < NumEntries; i++) {
                         const BG_VENDOR_HASH_FILE_ENTRY* entry = (const BG_VENDOR_HASH_FILE_ENTRY*)(body.constData()) + i;
-                        securityInfo += usprintf("\nAddress: %08Xh Size: %Xh\nHash: ", entry->Offset, entry->Size);
+                        securityInfo += usprintf("\nAddress: %08Xh Size: %Xh\nAMI Hash Existing: ", entry->Offset, entry->Size);
                         for (UINT8 j = 0; j < sizeof(entry->Hash); j++) {
                             securityInfo += usprintf("%02X", entry->Hash[j]);
                         }
